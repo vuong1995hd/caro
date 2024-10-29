@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Caro</title>
+  <style>
+
+    .center {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+    #board {
+      position: relative;
+      width: 600px;
+      height: 600px;
+      margin-bottom: 10px;
+    }
+
+    .cell {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #000;
+      position: absolute;
+      text-align: center;
+      font-size: 24px;
+      line-height: 30px;
+      cursor: pointer;
+    }
+
+    .button-container {
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+
+    .scoreboard {
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="center">
+  <h1>Game Caro</h1>
+  <div class="scoreboard">
+    Điểm X: <span id="scoreX">0</span> | Điểm O: <span id="scoreO">0</span>
+  </div>
+  <div id="board"></div>
+  <div class="button-container">
+    <button onclick="undoMove()">Xóa bước đi</button>
+    <button onclick="resetGame()">Chơi lại</button>
+  </div>
+</div>
+
+<script>
+  const boardSize = 20;
+  const cellSize = 30;
+  const board = document.getElementById('board');
+  let currentPlayer = 'X';
+  let scoreX = 0;
+  let scoreO = 0;
+  let boardArray = Array.from(Array(boardSize), () => Array(boardSize).fill(null)); // Mảng 2 chiều để lưu trạng thái bảng
+  let moveHistory = [];
+
+
+  function createBoard() {
+    board.innerHTML = '';
+    for (let i = 0; i < boardSize; i++) {
+      for (let j = 0; j < boardSize; j++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.style.left = `${j * cellSize}px`;
+        cell.style.top = `${i * cellSize}px`;
+        cell.dataset.row = i;
+        cell.dataset.col = j;
+        board.appendChild(cell);
+
+
+        cell.addEventListener('click', function () {
+          handleCellClick(cell, i, j);
+        });
+      }
+    }
+  }
+
+
+  function handleCellClick(cell, row, col) {
+    if (boardArray[row][col] === null) {
+      boardArray[row][col] = currentPlayer;
+      cell.textContent = currentPlayer;
+      moveHistory.push({ row, col });
+      if (checkWin(row, col)) {
+        updateScore(currentPlayer);
+        setTimeout(() => alert(`${currentPlayer} thắng cuộc!`), 10);
+        resetGame();
+        return;
+      }
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    }
+  }
+
+
+  function updateScore(player) {
+    if (player === 'X') {
+      scoreX++;
+      document.getElementById('scoreX').textContent = scoreX;
+    } else if (player === 'O') {
+      scoreO++;
+      document.getElementById('scoreO').textContent = scoreO;
+    }
+  }
+
+
+  function checkWin(row, col) {
+    const directions = [
+      { dr: 1, dc: 0 },
+      { dr: 0, dc: 1 },
+      { dr: 1, dc: 1 },
+      { dr: 1, dc: -1 }
+    ];
+
+    for (const { dr, dc } of directions) {
+      let count = 1;
+      for (let i = 1; i < 5; i++) {
+        const r = row + dr * i;
+        const c = col + dc * i;
+        if (r < 0 || c < 0 || r >= boardSize || c >= boardSize || boardArray[r][c] !== currentPlayer) break;
+        count++;
+      }
+      for (let i = 1; i < 5; i++) {
+        const r = row - dr * i;
+        const c = col - dc * i;
+        if (r < 0 || c < 0 || r >= boardSize || c >= boardSize || boardArray[r][c] !== currentPlayer) break;
+        count++;
+      }
+      if (count >= 5) return true;
+    }
+    return false;
+  }
+
+
+  function undoMove() {
+    if (moveHistory.length > 0) {
+      const lastMove = moveHistory.pop();
+      boardArray[lastMove.row][lastMove.col] = null;
+      const cells = board.children;
+      for (let cell of cells) {
+        if (parseInt(cell.dataset.row) === lastMove.row && parseInt(cell.dataset.col) === lastMove.col) {
+          cell.textContent = '';
+          break;
+        }
+      }
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    }
+  }
+
+
+  function resetGame() {
+    boardArray = Array.from(Array(boardSize), () => Array(boardSize).fill(null));
+    moveHistory = [];
+    currentPlayer = 'X';
+    createBoard();
+  }
+
+
+  createBoard();
+</script>
+</body>
+</html>
